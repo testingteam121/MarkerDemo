@@ -5,9 +5,23 @@
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
     <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
-
+    <style>
+      #unmuteButton {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 10px 20px;
+        background-color: #ff4081;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        display: none; /* Initially hidden */
+        z-index: 999;
+      }
+    </style>
     <script>
-      // Register the videohandler component
       AFRAME.registerComponent('videohandler', {
         schema: {
           target: { type: 'selector' }
@@ -15,15 +29,28 @@
         init: function () {
           const marker = this.el;
           const video = this.data.target;
+          const button = document.getElementById("unmuteButton");
 
-          marker.addEventListener('markerFound', () => video.play());
-          marker.addEventListener('markerLost', () => video.pause());
+          marker.addEventListener('markerFound', () => {
+            video.play();
+            button.style.display = "block";
+
+            button.onclick = () => {
+              video.muted = !video.muted;
+              video.play(); // resume playback if paused
+              button.innerText = video.muted ? "Unmute" : "Mute";
+            };
+          });
+
+          marker.addEventListener('markerLost', () => {
+            video.pause();
+            button.style.display = "none";
+          });
         }
       });
 
-      // Load markers and videos from JSON dynamically
       document.addEventListener('DOMContentLoaded', () => {
-        fetch('assets/markers.json') // JSON should be in public folder or same directory
+        fetch('assets/markers.json')
           .then(response => response.json())
           .then(data => {
             const scene = document.querySelector('#scene');
@@ -32,7 +59,7 @@
             data.forEach((item, index) => {
               const videoId = `vid_${index}`;
 
-              // Create video asset
+              // Create video
               const video = document.createElement('video');
               video.setAttribute('id', videoId);
               video.setAttribute('src', item.videoUrl);
@@ -41,7 +68,7 @@
               video.setAttribute('crossorigin', 'anonymous');
               video.setAttribute('webkit-playsinline', '');
               video.setAttribute('playsinline', '');
-              video.setAttribute('muted', '');
+              video.setAttribute('muted', ''); // start muted
               assets.appendChild(video);
 
               // Create marker
@@ -60,7 +87,7 @@
               marker.setAttribute('cursor', 'fuse: false; rayOrigin: mouse;');
               marker.setAttribute('id', `marker_${index}`);
 
-              // Create a-video inside marker
+              // Create a-video
               const aVideo = document.createElement('a-video');
               aVideo.setAttribute('src', `#${videoId}`);
               aVideo.setAttribute('scale', '1 1 1');
@@ -68,8 +95,8 @@
               aVideo.setAttribute('rotation', '-90 0 0');
               aVideo.setAttribute('class', 'clickable');
               aVideo.setAttribute('gesture-handler', '');
-
               marker.appendChild(aVideo);
+
               scene.appendChild(marker);
             });
           });
@@ -78,6 +105,8 @@
   </head>
 
   <body style="margin: 0; overflow: hidden;">
+    <button id="unmuteButton">Unmute</button>
+
     <a-scene
       vr-mode-ui="enabled: false"
       loading-screen="enabled: false;"
