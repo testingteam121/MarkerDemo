@@ -1,80 +1,71 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-    <head>
-        <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
-        <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
-        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
-        <script>
-            AFRAME.registerComponent('videohandler', {
-                init: function () {
-                    var marker = this.el;
-                    this.vid = document.querySelector("#vid");
+  <head>
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
- marker.addEventListener('markerFound', function () {
-                        this.toggle = true;
-                        this.vid.play();
-                    }.bind(this));
+    <script>
+      AFRAME.registerComponent('videohandler', {
+        schema: {
+          target: { type: 'selector' }  // allow passing the video selector
+        },
+        init: function () {
+          const marker = this.el;
+          const video = this.data.target;
 
-                    marker.addEventListener('markerLost', function () {
-                        this.toggle = false;
-                        this.vid.pause();
-                    }.bind(this));
+          marker.addEventListener('markerFound', () => {
+            video.play();
+          });
 
-                    
-                },
-            });
-        </script>
-    </head>
+          marker.addEventListener('markerLost', () => {
+            video.pause();
+          });
+        }
+      });
+    </script>
+  </head>
 
-    <body style="margin: 0; overflow: hidden;">
-        <a-scene
-            vr-mode-ui="enabled: false"
-            loading-screen="enabled: false;"
-            arjs='sourceType: webcam; debugUIEnabled: false;'
-            id="scene"
-            embedded
-            gesture-detector
-        >
-            <a-assets>
-                <video
-                    id="vid"
-                    src="assets/asset.mp4"
-                    preload="auto"
-                    response-type="arraybuffer"
-                    loop
-                    crossorigin
-                    webkit-playsinline
-                    autoplay
-                    playsinline
-                ></video>
-            </a-assets>
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene
+      embedded
+      arjs="sourceType: webcam; debugUIEnabled: false;"
+    >
+      <a-assets>
+        <video id="video1" src="assets/video1.mp4" loop crossorigin webkit-playsinline playsinline muted></video>
+        <video id="video2" src="assets/video2.mp4" loop crossorigin webkit-playsinline playsinline muted></video>
+      </a-assets>
 
-            <a-marker
-                type="pattern"
-                preset="custom"
-                url="assets/marker.patt"
-                videohandler
-                smooth="true"
-                smoothCount="10"
-                smoothTolerance="0.01"
-                smoothThreshold="5"
-                raycaster="objects: .clickable"
-                emitevents="true"
-                cursor="fuse: false; rayOrigin: mouse;"
-                id="markerA"
-            >
-                <a-video
-                    src="#vid"
-                    scale="1 1 1"
-                    position="0 0.1 0"
-                    rotation="-90 0 0"
-                    class="clickable"
-                    gesture-handler
-                ></a-video>
-            </a-marker>
+      <!-- Marker 1 - Video 1 -->
+      <a-marker
+        type="pattern"
+        url="assets/marker1.patt"
+        videohandler="target: #video1"
+      >
+        <a-video
+          src="#video1"
+          position="0 0.1 0"
+          rotation="-90 0 0"
+          width="1"
+          height="0.6"
+        ></a-video>
+      </a-marker>
 
-            <a-entity camera></a-entity>
-        </a-scene>
-    </body>
+      <!-- Marker 2 - Video 2 -->
+      <a-marker
+        type="pattern"
+        url="assets/marker2.patt"
+        videohandler="target: #video2"
+      >
+        <a-video
+          src="#video2"
+          position="0 0.1 0"
+          rotation="-90 0 0"
+          width="1"
+          height="0.6"
+        ></a-video>
+      </a-marker>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+  </body>
 </html>
