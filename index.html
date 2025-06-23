@@ -1,8 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
 
     <style>
       #unmuteButton {
@@ -10,40 +12,104 @@
         top: 10px;
         right: 10px;
         padding: 10px 20px;
-        background-color: #ff4081;
+        background-color: #007bff;
         color: white;
         border: none;
         border-radius: 6px;
         font-size: 16px;
-        cursor: pointer;
         display: none;
         z-index: 999;
+        cursor: pointer;
       }
     </style>
 
     <script>
+      let currentVideo = null; // reference to current video on markerFound
+
       AFRAME.registerComponent('videohandler', {
+        schema: {
+          target: { type: 'selector' }
+        },
         init: function () {
           const marker = this.el;
-          const video = document.querySelector('#vid');
+          const video = this.data.target;
           const button = document.getElementById('unmuteButton');
 
           marker.addEventListener('markerFound', () => {
             video.play();
+            currentVideo = video;
             button.style.display = 'block';
-
-            button.onclick = () => {
-              video.muted = !video.muted;
-              button.innerText = video.muted ? 'Unmute' : 'Mute';
-              video.play();
-            };
+            button.innerText = video.muted ? 'Unmute' : 'Mute';
           });
 
           marker.addEventListener('markerLost', () => {
             video.pause();
+            currentVideo = null;
             button.style.display = 'none';
           });
         }
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        fetch('assets/markers.json')
+          .then(res => res.json())
+          .then(data => {
+            const scene = document.querySelector('#scene');
+            const assets = document.querySelector('a-assets');
+
+            data.forEach((item, index) => {
+              const videoId = `video_${index}`;
+
+              // 1. Create <video> tag
+              const video = document.createElement('video');
+              video.setAttribute('id', videoId);
+              video.setAttribute('src', item.videoUrl);
+              video.setAttribute('loop', '');
+              video.setAttribute('preload', 'auto');
+              video.setAttribute('crossorigin', 'anonymous');
+              video.setAttribute('playsinline', '');
+              video.setAttribute('webkit-playsinline', '');
+              video.setAttribute('muted', '');
+              assets.appendChild(video);
+
+              // 2. Create <a-marker>
+              const marker = document.createElement('a-marker');
+              marker.setAttribute('type', 'pattern');
+              marker.setAttribute('url', item.markerUrl);
+              marker.setAttribute('videohandler', `target: #${videoId}`);
+              marker.setAttribute('gesture-detector', '');
+              marker.setAttribute('smooth', 'true');
+              marker.setAttribute('smoothCount', '10');
+              marker.setAttribute('smoothTolerance', '0.01');
+              marker.setAttribute('smoothThreshold', '5');
+              marker.setAttribute('emitevents', 'true');
+              marker.setAttribute('cursor', 'fuse: false; rayOrigin: mouse;');
+              marker.setAttribute('raycaster', 'objects: .clickable');
+              marker.setAttribute('id', `marker_${index}`);
+
+              // 3. Create <a-video>
+              const aVideo = document.createElement('a-video');
+              aVideo.setAttribute('src', `#${videoId}`);
+              aVideo.setAttribute('position', '0 0.1 0');
+              aVideo.setAttribute('rotation', '-90 0 0');
+              aVideo.setAttribute('scale', '1 1 1');
+              aVideo.setAttribute('class', 'clickable');
+              aVideo.setAttribute('gesture-handler', '');
+
+              marker.appendChild(aVideo);
+              scene.appendChild(marker);
+            });
+          });
+
+        // 4. Setup button click listener (global)
+        const button = document.getElementById('unmuteButton');
+        button.addEventListener('click', () => {
+          if (currentVideo) {
+            currentVideo.muted = !currentVideo.muted;
+            currentVideo.play();
+            button.innerText = currentVideo.muted ? 'Unmute' : 'Mute';
+          }
+        });
       });
     </script>
   </head>
@@ -52,37 +118,14 @@
     <button id="unmuteButton">Unmute</button>
 
     <a-scene
+      vr-mode-ui="enabled: false"
+      loading-screen="enabled: false;"
+      arjs='sourceType: webcam; debugUIEnabled: false;'
+      id="scene"
       embedded
-      arjs="sourceType: webcam; debugUIEnabled: false;"
       gesture-detector
     >
-      <a-assets>
-        <video
-          id="vid"
-          src="assets/video1.mp4"
-          loop
-          crossorigin="anonymous"
-          playsinline
-          webkit-playsinline
-          muted
-        ></video>
-      </a-assets>
-
-      <a-marker
-        type="pattern"
-        url="assets/marker1.patt"
-        videohandler
-        gesture-detector
-      >
-        <a-video
-          src="#vid"
-          width="1"
-          height="0.6"
-          position="0 0.1 0"
-          rotation="-90 0 0"
-        ></a-video>
-      </a-marker>
-
+      <a-assets></a-assets>
       <a-entity camera></a-entity>
     </a-scene>
   </body>
