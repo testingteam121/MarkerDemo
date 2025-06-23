@@ -1,0 +1,14 @@
+[
+  {
+    "markerUrl": "assets/marker1.patt",
+    "videoUrl": "assets/video1.mp4"
+  },
+  {
+    "markerUrl": "assets/marker2.patt",
+    "videoUrl": "assets/video2.mp4"
+  },
+  {
+    "markerUrl": "assets/marker3.patt",
+    "videoUrl": "assets/video3.mp4"
+  }
+]
